@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	prom "contrib.go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/resource"
 	"go.opencensus.io/stats/view"
@@ -43,12 +44,22 @@ func (emptyPromExporter) ExportView(viewData *view.Data) {
 }
 
 func newPrometheusExporter(config *metricsConfig, logger *zap.SugaredLogger) (view.Exporter, ResourceExporterFactory, error) {
-	e, err := prom.NewExporter(prom.Options{Namespace: config.component})
+	// Use the default Prometheus registry so that manually registered metrics
+	// (via prometheus.NewXXX + registry.Register) are exposed alongside OpenCensus metrics.
+	// This allows both OpenCensus metrics and custom Prometheus metrics to be collected
+	// from the same /metrics endpoint on port 9090.
+	e, err := prom.NewExporter(prom.Options{
+		Namespace:  config.component,
+		Registry:   prometheus.DefaultRegisterer.(*prometheus.Registry),
+		Registerer: prometheus.DefaultRegisterer,
+		Gatherer:   prometheus.DefaultGatherer,
+	})
 	if err != nil {
 		logger.Errorw("Failed to create the Prometheus exporter.", zap.Error(err))
 		return nil, nil, err
 	}
-	logger.Debugf("Created Prometheus exporter with config: %v. Start the server for Prometheus exporter.", config)
+	logger.Infof("Created Prometheus exporter with unified registry on %s:%d (namespace: %s)",
+		config.prometheusHost, config.prometheusPort, config.component)
 	// Start the server for Prometheus scraping
 	go func() {
 		srv := startNewPromSrv(e, config.prometheusHost, config.prometheusPort)
