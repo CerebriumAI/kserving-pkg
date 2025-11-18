@@ -52,7 +52,7 @@ var backOffTemplate = wait.Backoff{
 	Duration: 50 * time.Millisecond,
 	Factor:   1.4,
 	Jitter:   0.1, // At most 10% jitter.
-	Steps:    15,
+	Steps:    7,
 }
 
 // ErrTimeoutDialing when the timeout is reached after set amount of time.
