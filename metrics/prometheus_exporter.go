@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	promlib "github.com/prometheus/client_golang/prometheus"
 	prom "contrib.go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/resource"
 	"go.opencensus.io/stats/view"
@@ -50,9 +50,9 @@ func newPrometheusExporter(config *metricsConfig, logger *zap.SugaredLogger) (vi
 	// from the same /metrics endpoint on port 9090.
 	e, err := prom.NewExporter(prom.Options{
 		Namespace:  config.component,
-		Registry:   prometheus.DefaultRegisterer.(*prometheus.Registry),
-		Registerer: prometheus.DefaultRegisterer,
-		Gatherer:   prometheus.DefaultGatherer,
+		Registry:   promlib.DefaultRegisterer.(*promlib.Registry),
+		Registerer: promlib.DefaultRegisterer,
+		Gatherer:   promlib.DefaultGatherer,
 	})
 	if err != nil {
 		logger.Errorw("Failed to create the Prometheus exporter.", zap.Error(err))
